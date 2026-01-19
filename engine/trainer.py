@@ -39,6 +39,9 @@ class Trainer():
             self.total_epoch = self.params.epoch
             if self.params.early_patience > 0:
                 self.early_stop_check = EarlyStop(self.params.early_patience)
+        
+        # Initialize GradScaler for AMP
+        self.scaler = torch.cuda.amp.GradScaler(enabled=True)
 
     def forward_one_batch(self, samples, targets, is_train):
         """Train a single (full) epoch on the model using the given
@@ -58,10 +61,11 @@ class Trainer():
 
         # forward
         with torch.set_grad_enabled(is_train):
-            outputs,_ = self.model(samples)  # (batchsize, num_cls)
-            if self.params.train_type == 'prompt_cam':
-                outputs = outputs.squeeze(-1)
-            loss = self.cls_criterion(outputs, targets)
+            with torch.cuda.amp.autocast(enabled=True):
+                outputs,_ = self.model(samples)  # (batchsize, num_cls)
+                if self.params.train_type == 'prompt_cam':
+                    outputs = outputs.squeeze(-1)
+                loss = self.cls_criterion(outputs, targets)
 
             if loss == float('inf'):
                 logger.info(
@@ -78,12 +82,9 @@ class Trainer():
         # =======backward and optim step only if in training phase... =========
         if is_train:
             self.optimizer.zero_grad()
-            loss.backward()
-            #for name, param in self.model.named_parameters():
-            #    if param.grad is not None:
-            #        print(f"After backward: {name} has grad with mean {param.grad.mean().item()}")
-    
-            self.optimizer.step()
+            self.scaler.scale(loss).backward()
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
 
         return loss, outputs, (acc1, acc5)
 

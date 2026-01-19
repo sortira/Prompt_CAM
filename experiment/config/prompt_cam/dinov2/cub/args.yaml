@@ -1,7 +1,7 @@
 batch_size: 16
 crop_size: 224
 data: cub
-data_path: ./data/images/cub
+data_path: datasets/cub
 debug: true
 drop_path_rate: 0.0
 early_patience: 101

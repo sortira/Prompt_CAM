@@ -9,7 +9,7 @@ from utils.setup_logging import get_logger
 
 logger = get_logger("Prompt_CAM")
 
-TUNE_MODULES = ['vpt']
+TUNE_MODULES = ['vpt', 'head']
 def get_model(params,visualize=False):
     params.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {params.device}")

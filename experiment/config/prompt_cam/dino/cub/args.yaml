@@ -1,11 +1,11 @@
-batch_size: 16
+batch_size: 64
 crop_size: 224
 data: cub                                   #Change this for new dataset
-data_path: ./data/images/cub                #Change this for new dataset
-debug: true
+data_path: datasets/cub                #Change this for new dataset
+debug: false
 drop_path_rate: 0.1
-early_patience: 101
-epoch: 130                                  #Tune this for new dataset
+early_patience: 10
+epoch: 50                                  #Tune this for new dataset
 eval_freq: 10
 final_acc_hp: true
 final_run: true
