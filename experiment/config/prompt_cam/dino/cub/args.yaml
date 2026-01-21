@@ -1,4 +1,4 @@
-batch_size: 64
+batch_size: 16
 crop_size: 224
 data: cub                                   #Change this for new dataset
 data_path: datasets/cub                #Change this for new dataset
