@@ -95,7 +95,7 @@ def create_overlay_images(X,patch_size,attentions,output_folder):
 
 def prune_and_plot_ranked_heads(model,inputs,target, params):
     if params.top_traits<1 and params.top_traits>model.num_heads:
-        raise notImplementedError("top_traits must be greater than 0 and less than the number of heads")
+        raise NotImplementedError("top_traits must be greater than 0 and less than the number of heads")
 
     remaining_head_list = list(range(model.num_heads))
     pruned_head_index = None
