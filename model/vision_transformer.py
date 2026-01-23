@@ -269,8 +269,8 @@ class VisionTransformerPETL(VisionTransformer):
         else:
             x,_ = self.forward_features(x)
 
-        x = self.forward_head(x)
-        return x, attn_maps
+        logits = self.forward_head(x)
+        return logits, attn_maps
     
     def reset_classifier(self, num_classes: int, global_pool: Optional[str] = None):
         self.num_classes = num_classes
@@ -284,6 +284,10 @@ class VisionTransformerPETL(VisionTransformer):
         ############# Added module #############    
         if self.params.train_type == 'vpt' or self.params.train_type == 'linear':
             self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
+        elif self.params.train_type == 'prompt_cam':
+            self.head = nn.Linear(self.embed_dim, 1)
+            # Add auxiliary classification head for evaluation (per-class logits)
+            self.classif_head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
         else:
             self.head = nn.Linear(self.embed_dim, 1)    
         ############# Added module end #############

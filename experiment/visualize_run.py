@@ -94,6 +94,12 @@ def prune_attn_heads(model,inputs,target, prediction,smpl_count, params):
     remaining_head_list = list(range(model.num_heads))
     pruned_head_index = None
     blur_head_lst = []
+    remaining_head_scores = []
+    
+    # Ensure prediction is an integer
+    if isinstance(prediction, torch.Tensor):
+        prediction = prediction.item()
+    prediction = int(prediction)
 
     while len(remaining_head_list) > 0 and len(remaining_head_list) > params.top_traits:
         highest_score=-1e8
@@ -104,9 +110,16 @@ def prune_attn_heads(model,inputs,target, prediction,smpl_count, params):
                             blur_head_lst=blur_head_lst+[head_idx],
                             target_cls=prediction)
             
-            probabilities = torch.softmax(output.squeeze(-1), dim=-1)
+            # Handle both single-logit and per-class logits
+            if output.numel() == 1 or output.shape[-1] == 1:
+                probabilities = torch.softmax(output.view(-1), dim=-1)
+                score = probabilities[0].item()
+            else:
+                # Per-class logits (e.g., shape [1, 200])
+                probabilities = torch.softmax(output.view(-1), dim=-1)  # flatten to [200]
+                score = probabilities[int(prediction)].item()
 
-            remaining_head_scores.append(probabilities[0,prediction].item())
+            remaining_head_scores.append(score)
 
             if remaining_head_scores[-1] > highest_score:
                 highest_score=remaining_head_scores[-1] 
@@ -117,7 +130,23 @@ def prune_attn_heads(model,inputs,target, prediction,smpl_count, params):
             remaining_head_list.remove(pruned_head_index)
             print(f'best head to prune is {pruned_head_index+1} with score {highest_score}')    
 
-    sorted_remaining_heads = [head for _, head in sorted(zip(remaining_head_scores, remaining_head_list))]
+    # If no pruning occurred, ensure scores exist and default to remaining heads
+    if len(remaining_head_list) > 0 and (not remaining_head_scores or len(remaining_head_scores) != len(remaining_head_list)):
+        remaining_head_scores = []
+        for head_idx in remaining_head_list:
+            output, _ = model(inputs,
+                              blur_head_lst=blur_head_lst+[head_idx],
+                              target_cls=prediction)
+            # Handle both single-logit and per-class logits
+            if output.numel() == 1 or output.shape[-1] == 1:
+                probabilities = torch.softmax(output.view(-1), dim=-1)
+                score = probabilities[0].item()
+            else:
+                probabilities = torch.softmax(output.view(-1), dim=-1)
+                score = probabilities[int(prediction)].item()
+            remaining_head_scores.append(score)
+
+    sorted_remaining_heads = [head for _, head in sorted(zip(remaining_head_scores, remaining_head_list))] if remaining_head_scores else remaining_head_list
 
     _,attn_map=model(inputs,
                     blur_head_lst=blur_head_lst,

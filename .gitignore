@@ -9,3 +9,6 @@ visualization/
 data/annotations/
 datasets/
 *.pdf
+*.jpg
+*.png
+*.csv
