@@ -21,6 +21,7 @@ if PROJECT_ROOT not in sys.path:
 from data.dataset.utils import ImageFilelist, create_annotation_file, get_transformation
 from experiment.build_model import get_model
 import experiment.visualize_run as visualize_run
+from torchvision.datasets.folder import ImageFolder
 
 
 # Thin wrapper to ensure we always have a SimpleNamespace with expected fields.
@@ -46,11 +47,9 @@ def _load_params(cfg_path, data_path, top_traits):
 
 
 def _prepare_dataloader(data_root, batch_size):
-    # Combine train and val splits (if both exist) into a single list for evaluation.
-    annotation_path = os.path.join("data", "annotations", "cub", "deletion_auc_full.txt")
-    create_annotation_file(data_root, ["train", "val"], annotation_path)
+    # Use ImageFolder to automatically load all images from directory structure
     transform = get_transformation("val")
-    dataset = ImageFilelist(data_root, annotation_path, name="cub_full", transform=transform)
+    dataset = ImageFolder(data_root, transform=transform)
     return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True)
 
 
